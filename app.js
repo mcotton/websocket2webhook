@@ -21,17 +21,17 @@ var curr_user   =       {},
     bridges     =       {};
 
 
-var starting_lineup = [
+var startup_items = [
     function() { een.login({'username': config.username, 'password': config.password}, postLogin, failure); },
     function() { een.getDeviceList({}, postGetDevices, failure); }
 ];
 
 
 function execute_next_step() {
-    if(starting_lineup.length > 0)  { 
-        starting_lineup.shift()();
+    if(startup_items.length > 0)  { 
+        startup_items.shift()();
     } else {
-        console.log("Error: execute_next_step ran out of starting_lineup items")
+        console.log("Error: execute_next_step ran out of startup_items items")
     }
 }
 
