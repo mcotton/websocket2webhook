@@ -16,14 +16,16 @@ var  out        =       console.log,
 
 var curr_user   =       {},
     users       =       {},
-    devices     =       {},
-    cameras     =       {},
-    bridges     =       {};
+    devices     =       [],
+    cameras     =       [],
+    bridges     =       [],
+    auth_key    =       undefined;
 
 
 var startup_items = [
     function() { een.login({'username': config.username, 'password': config.password}, postLogin, failure); },
-    function() { een.getDeviceList({}, postGetDevices, failure); }
+    function() { een.getDeviceList({}, postGetDevices, failure); },
+    function() { buildPollQuery(); }
 ];
 
 
@@ -31,9 +33,15 @@ function execute_next_step() {
     if(startup_items.length > 0)  { 
         startup_items.shift()();
     } else {
-        console.log("Error: execute_next_step ran out of startup_items items")
+        // console.log("Error: execute_next_step ran out of startup_items items")
     }
 }
+
+
+
+/***************
+*** Normal Handlers
+***************/
 
 
 function postLogin(data) { 
@@ -46,7 +54,8 @@ function postLogin(data) {
 
 function postGetDevices(data) {
     console.log(data.statusCode + ': successfully got device list');
-    devices = data.body;
+    devices = JSON.parse(data.body);
+    
     u.each(devices, function(item) {
         if(item[3] === 'camera') {
             cameras.push(item);
@@ -58,8 +67,42 @@ function postGetDevices(data) {
 }
 
 
+function buildPollQuery() {
+    var obj = { 'poll': { 'cameras': {} }, 'data': {} };
+
+    u.each(u.filter(cameras, function(item) { return item[5] === 'ATTD' } ), function(item) {
+        obj.poll.cameras[item[1]] = { "resource": ["status"] };
+    });
+
+    ee_cookie = een.cookie_jar._jar.store['idx']['eagleeyenetworks.com']['/']['videobank_sessionid'];
+    auth_key = ee_cookie.toString().match(/videobank_sessionid=(c\d*~\w*;)/)[1];
+
+    obj.data.auth_key = auth_key;
+    obj.data.active_brand_subdomain = curr_user['active_brand_subdomain'];
+    obj.data.active_account_id = curr_user['active_account_id'];
+
+    console.log("calling een.subscribeWSPollStream");
+    een.subscribeWSPollStream(obj, processWSMessage, processWSError);
+    execute_next_step();
+}
+
+
+function processWSMessage(data) {
+    // console.log("called form postSubscribe");
+    console.log('WS message: ', data);
+}
+
+
+/***************
+*** Error Handlers
+***************/
+
 function failure(data) {
-    console.log(data.statusCode + ': failure handler');
+    console.log(data);
+}
+
+function processWSError(data) {
+    console.log("Error from processWSError: ", data);
 }
 
 

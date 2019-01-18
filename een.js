@@ -1,4 +1,5 @@
 var request = require('request'),
+    WebSocket = require('ws'),
     cookie_jar = request.jar(),
     host = 'https://api.eagleeyenetworks.com';
 
@@ -120,7 +121,7 @@ exports.getAfterImage = function(opts, success, failure) {
                 return res
             }
         )
-}
+};
 
 exports.getVideo = function(opts, success, failure) {
     var src_url = [   host,
@@ -187,7 +188,12 @@ exports.getDeviceList = function(opts, success, failure) {
             jar: cookie_jar
         },
         function (err, res, body) {
-            if (err) { if ( typeof failure === 'function') failure(res); }
+            if (err) { 
+                console.log('Error in getDeviceList: ' + err);
+                if ( typeof failure === 'function') {
+                    failure(res);
+                } 
+            }
             if (!err && res.statusCode == 200) {
                 if ( typeof success === 'function') success(res);
             }
@@ -196,8 +202,60 @@ exports.getDeviceList = function(opts, success, failure) {
 
 };
 
-exports.startPolling = function(opts, success, failure) {
+exports.subscribePollStream = function(opts, success, failure) {
+    var src_url = [ host, '/poll'].join('')
 
+    request.post({
+        url: src_url,
+        jar: cookie_jar,
+        json: true,
+        body: opts
+        }, function(err, res, body) {
+                if (err) { 
+                    console.log('Error in getDeviceList: ' + err);
+                    if ( typeof failure === 'function') {
+                        failure(res);
+                    } 
+                }
+                if (!err && res.statusCode == 200) {
+                    // call success callback with user object
+                    if ( typeof success === 'function') success(res);
+            }
+    })
+};
+
+exports.subscribeWSPollStream = function(opts, message_func, error_func) {
+    var url = ["wss://",
+                opts.data.active_brand_subdomain,
+                ".eagleeyenetworks.com",
+                "/api/v2/Device/",
+                opts.data.active_account_id,
+                "/Events?A=",
+                opts.data.auth_key].join('');
+
+    ws = new WebSocket(url);
+
+    ws.on('open', function() {
+        try {
+            ws.send(JSON.stringify(opts.poll));
+        } catch(e) {
+            // figure out what to do here
+        }
+    });
+
+    ws.on('message', function(data) {
+        // console.log('WS message: ', data);
+        if ( typeof message_func === 'function') message_func(data);
+    });
+
+    ws.on('error', function(data) {
+        // console.log('WS Error: ', data)
+        if ( typeof error_func === 'function') error_func(data);
+    });
+
+    ws.on('close', function close() {
+      console.log('disconnected');
+    });
 };
 
 exports.continuePolling = function(opts, success, failure) {
@@ -231,7 +289,6 @@ exports.addAnnotations = function(opts, success, failure) {
         }
     )
 };
-
 
 exports.DtoS = function(epoch_time) {
     var yy, mm, dd, hr, mn, sc, ms, timecode, jstime;
@@ -273,6 +330,6 @@ exports.StoD = function (timecode) {
 
 exports.export_cookie_jar = function() {
     return cookie_jar;
-}
+};
 
 
