@@ -1,10 +1,22 @@
-var request = require('request'),
+var FileCookiestore = require('tough-cookie-filestore'),
+    request = require('request'),
     WebSocket = require('ws'),
-    cookie_jar = request.jar(),
+    cookie_path = 'cookie.json',
+    fs = require('fs'),
     host = 'https://api.eagleeyenetworks.com';
+
+
+
+// make sure the cookie.json file exists
+if(!fs.existsSync(cookie_path)) {
+    fs.closeSync(fs.openSync(cookie_path, 'w'));
+}
+
+var cookie_jar = request.jar(new FileCookiestore(cookie_path));
 
 // make the cookie jar available outside this module
 exports.cookie_jar = cookie_jar;
+
 
 exports.login = function(opts, success, failure) {
     request.post({
