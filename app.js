@@ -12,6 +12,7 @@ var cookie_jar  =       r.jar();
 var  out        =       console.log,
      config     =       require('./config'),
      een        =       require('./een'),
+     worker     =       require('./worker'),
      host       =       'https://login.eagleeyenetworks.com';
 
 var curr_user   =       {},
@@ -22,7 +23,6 @@ var curr_user   =       {},
     bridges     =       [],
     auth_key    =       undefined;
 
-var worker = require('./worker');
 
 var startup_items = [
     function() { een.login({'username': config.username, 'password': config.password}, postLogin, failure); },
@@ -46,16 +46,16 @@ function executeNextStep() {
 
 
 function createNewJob(type, opts) {
-    var job = queue.create(type, opts).save( function(err) {
+    var job = queue.create(type, opts).ttl(10000).save( function(err) {
         if ( err ) { console.log("Error creating job ", err); }
         if ( !err ) {
-            console.log("Successfully create job: " + job.id);
+            //console.log("Successfully create job: " + job.id);
         }
     })
 
 
     job.on('complete', function(result){
-        console.log('Job completed with data ', result);
+        //console.log('Job completed with data ', result);
         worker.onComplete(job, result);
 
     }).on('failed attempt', function(errorMessage, doneAttempts){
@@ -74,16 +74,16 @@ function createNewJob(type, opts) {
 
 
 queue.on('job enqueue', function(id, type){
-  console.log( 'Job %s got queued of type %s', id, type );
+  //console.log( 'Job %s got queued of type %s', id, type );
 
 }).on('job complete', function(id, result){
-  kue.Job.get(id, function(err, job){
-    if (err) return;
-    job.remove(function(err){
-      if (err) throw err;
-      console.log('removed completed job #%d', job.id);
-    });
-  });
+  // kue.Job.get(id, function(err, job){
+  //   if (err) return;
+  //   job.remove(function(err){
+  //     if (err) throw err;
+  //     //console.log('removed completed job #%d', job.id);
+  //   });
+  // });
 
 }).on( 'error', function( err ) {
   console.log( 'Kue: Oops... ', err );
@@ -105,12 +105,20 @@ process.once( 'SIGINT', function ( sig ) {
   });
 });
 
+process.once( 'uncaughtException', function(err){
+  console.error( 'Something bad happened: ', err );
+  queue.shutdown( 5000, function(err2){
+    console.error( 'Kue shutdown result: ', err2 || 'OK' );
+    process.exit( 0 );
+  });
+});
+
 
 /**************
 *** Process the job
 **************/
 
-queue.process('status', 5, function(job, done) {
+queue.process('status', 1, function(job, done) {
     worker.doSomething(job, done);
 });
 
@@ -160,6 +168,7 @@ function buildPollQuery() {
 
     //console.log("calling een.subscribeWSPollStream");
     een.subscribeWSPollStream(obj, processWSMessage, processWSError);
+    console.log('Subscribing to WS Poll Stream')
     executeNextStep();
 }
 
@@ -173,27 +182,70 @@ function processWSMessage(data) {
 
 
 function compareDeviceStatus(data) {
-    console.log('Calling compareDeviceStatus');
+    //console.log('Calling compareDeviceStatus');
     var message = data.data;
     var statusText = '';
 
     for (var item in message) {
+
+        if(deviceStatus[item] == undefined) {
+            //console.log('deviceStatus[item] is undefined ', item);
+            deviceStatus[item] = message[item]['status'];
+            return
+        }
+
         var oldStatus = deviceStatus[item];
         var newStatus = message[item]['status'];
 
+        // console.log("oldStatus: ", oldStatus);
+        // console.log("newStatus: ", newStatus);
+
         if(oldStatus != newStatus) {
-            console.log('Status has changed, create a new job');
+            //console.log(item + ' status has changed...', oldStatus, newStatus);
+
+            var oldStatusObj = parseStatus(item, oldStatus);
+            var newStatusObj = parseStatus(item, newStatus);
+
+            if(newStatusObj['invalid']) {
+                // ignore this update that are marked as invalid
+                //console.log('  -> status update marked as invalid', oldStatusObj);
+            } else {
+
+                newStatusObj['title'] = undefined;
+
+                // if(oldStatusObj['recording'] != newStatusObj['recording']) {
+                //     //console.log('recording has changed');
+                //     newStatusObj['title'] = newStatusObj['recording'] ? item + " is now recording" : item + " has stopped recording";
+                //     createNewJob('status', newStatusObj);
+                // } else {
+                //     //console.log("Recording: ", oldStatusObj['recording'], newStatusObj['recording']);
+                // }
+
+                if(oldStatusObj['camera_on'] != newStatusObj['camera_on']) {
+                    newStatusObj['title'] =  newStatusObj['camera_on'] ? item + " is now on" : item + " has turned off";
+                    createNewJob('status', newStatusObj);
+                }
+
+                if(oldStatusObj['streaming'] != newStatusObj['streaming']) {
+                    newStatusObj['title'] =  newStatusObj['streaming'] ? item + " is now streaming" : item + " has stoped streaming";
+                    createNewJob('status', newStatusObj);
+                }
+
+                if(oldStatusObj['registered'] != newStatusObj['registered']) {
+                    newStatusObj['title'] =  newStatusObj['registered'] ? item + " is now registered" : item + " is no longer registered";
+                    createNewJob('status', newStatusObj);
+                }
+
+                if(newStatusObj['title']) {
+                    console.log(newStatusObj['title']);
+                }
+
+                //createNewJob('status', newStatusObj);
+            }
+
+            // update the status for the next status change
             deviceStatus[item] = message[item]['status'];
 
-            statusObj = parseStatus(item);
-
-            if(statusObj['invalid']) {
-                // ignore this update that are marked as invalid
-            } else {
-                statusObj['title'] = item;
-
-                createNewJob('status', statusObj);
-            }
         } else {
             // do nothing
             console.log("do nothing ", oldStatus, newStatus);
@@ -204,8 +256,7 @@ function compareDeviceStatus(data) {
 }
 
 
-function parseStatus(item) {
-    var status = deviceStatus[item];
+function parseStatus(item, status) {
     var status_bits = []
     var status_bit_length = 21;
 
@@ -217,19 +268,19 @@ function parseStatus(item) {
 
     var first_thirteen_invalid = status_bits[13] ? true : false;
 
-    var invalid = (status == undefined) || (status == null) || status_bits[16] ? true : false;
+    var invalid = (status_bits[16]) ? true : false;
 
     var returned_obj = {
             // cameraStatusDisplayType = 2
                 'device': item,
                 'status': status,
                 'invalid': invalid,
-                'camera_on': !(invalid) ? status_bits[17] : null,
-                'streaming': !(invalid) ? status_bits[18] : null,
-                'recording': !(invalid) ? status_bits[19] : null,
-                'registered': !(invalid) ? status_bits[20] : null
+                'camera_on': !(invalid) ? status_bits[17] : false,
+                'streaming': !(invalid) ? status_bits[18] : false,
+                'recording': !(invalid) ? status_bits[19] : false,
+                'registered': !(invalid) ? status_bits[20] : false
             };
-    console.log("finished parseStatus");
+    //.console.log("finished parseStatus");
     return returned_obj;
     
 }

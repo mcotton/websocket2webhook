@@ -252,6 +252,7 @@ exports.subscribeWSPollStream = function(opts, message_func, error_func) {
             ws.send(JSON.stringify(opts.poll));
         } catch(e) {
             // figure out what to do here
+            if ( typeof error_func === 'function') error_func(data);
         }
     });
 
@@ -266,7 +267,8 @@ exports.subscribeWSPollStream = function(opts, message_func, error_func) {
     });
 
     ws.on('close', function close() {
-      console.log('disconnected');
+        if ( typeof error_func === 'function') error_func(data);
+        console.log('disconnected');
     });
 };
 
