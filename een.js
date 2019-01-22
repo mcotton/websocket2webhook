@@ -9,7 +9,7 @@ var FileCookiestore = require('tough-cookie-filestore'),
 
 // make sure the cookie.json file exists
 if(!fs.existsSync(cookie_path)) {
-    fs.closeSync(fs.openSync(cookie_path, 'w'));
+    fs.closeSync(fs.openSync(cookie_path, 'wb'));
 }
 
 var cookie_jar = request.jar(new FileCookiestore(cookie_path));
@@ -19,36 +19,51 @@ exports.cookie_jar = cookie_jar;
 
 
 exports.login = function(opts, success, failure) {
-    request.post({
-        url: host + '/g/aaa/authenticate',
-        jar: cookie_jar,
-        json: true,
-        body: {
-            'username': opts.username,
-            'password': opts.password,
-            'realm': opts.realm || 'eagleeyenetworks'
-        }
-        }, function(err, res, body) {
-            if (err) { console.log(err,res,body); }
-            if (!err && res.statusCode == 200) {
+    request.get({
+        url: host + '/g/aaa/isauth',
+        jar: cookie_jar
+    }, function(err, res, body) {
+        if (err) { console.log(err,res,body); }
+        if (!err) {
+            if(res.statusCode == 200) {
+                // skip the rest of the login process
+                console.log('Auth cookie is still good, skip ahead');
+                if ( typeof success === 'function') success({});
+            } else {
+                // go ahread and login
                 request.post({
-                    url: host + '/g/aaa/authorize',
+                    url: host + '/g/aaa/authenticate',
                     jar: cookie_jar,
                     json: true,
-                    body: { token: res.body.token }
+                    body: {
+                        'username': opts.username,
+                        'password': opts.password,
+                        'realm': opts.realm || 'eagleeyenetworks'
+                    }
                     }, function(err, res, body) {
-                            if (err) { throw new Error('Authorize error') }
-                            if (!err && res.statusCode == 200) {
-                                // call success callback with user object
-                                if ( typeof success === 'function') success(res);
+                        if (err) { console.log(err,res,body); }
+                        if (!err && res.statusCode == 200) {
+                            request.post({
+                                url: host + '/g/aaa/authorize',
+                                jar: cookie_jar,
+                                json: true,
+                                body: { token: res.body.token }
+                                }, function(err, res, body) {
+                                        if (err) { throw new Error('Authorize error') }
+                                        if (!err && res.statusCode == 200) {
+                                            // call success callback with user object
+                                            if ( typeof success === 'function') success(res);
+                                    }
+                            })
+                        } else {
+                            // call failure callback with status code
+                            if ( typeof failure === 'function') failure(res);
                         }
-                })
-            } else {
-                // call failure callback with status code
-                if ( typeof failure === 'function') failure(res);
+                    }
+                )
             }
         }
-    )
+    });
 };
 
 exports.getImage = function(opts, success, failure) {
