@@ -19,10 +19,12 @@ module.exports = {
         'listen_for_camera_on': true,
         'listen_for_streaming': true,
         'listen_for_registered': true,
-
+        
         // turn on and off specific logging
-        'debug': false,
-        'info': true
+        'debug': true,
+        'info': true,
+
+        'webhook_url': 'https://een.cloud/dumpster/'
 
 
     }
