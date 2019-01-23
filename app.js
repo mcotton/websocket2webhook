@@ -12,14 +12,14 @@ var config     =       require('./config'),
     worker     =       require('./worker');
 
 // misc items
-var queue       =       kue.createQueue(),
-    curr_user   =       {},
+var curr_user   =       {},
     users       =       {},
     devices     =       [],
     deviceStatus =      {},
     cameras     =       [],
     bridges     =       [];
 
+var queue       =       kue.createQueue(config.redis_options);
 
 
 /*****************
