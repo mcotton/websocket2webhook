@@ -24,7 +24,7 @@ module.exports = {
         'debug': true,
         'info': true,
 
-        'webhook_url': 'https://een.cloud/dumpster/'
+        'webhook_url': <url to call>
 
 
     }
