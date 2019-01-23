@@ -1,18 +1,18 @@
 ## Websocket to Webhook ##
 
-###Introduction###
+### Introduction ###
 This is an example of subscribing to the [Eagle Eye Video API](https://een.com) in order to monitor status of cameras and bridges.  This example uses [websocket polling](https://apidocs.eagleeyenetworks.com/apidocs/#websocket-polling).  It will look for events the user cares about and store them inside of a queue.  The workers pull items off the queue and send them as webhooks.
 
-###Requirements###
+### Requirements ###
 This example is written in Node.js and uses Redis but there is nothing special about this combination and could be replicated in another technology.
 
-###Installation###
+### Installation ###
 - clone this repo
 - run `npm install`
 - create `config.js` with your credentials
 - edit `worker.js` with any additional programming
 
-###Configuration###
+### Configuration ###
 You will need to add valid Eagle Eye crendentials in order to use this.  Please add them into `config.js`.  An example version of it is included below for reference.
 
 ```
@@ -48,13 +48,13 @@ module.exports = {
     }
 ```
 
-###Customization###
+### Customization ###
 The primary area to add your own customizations is in `worker.js`.  The `doSomething` hook that runs on every item enqueued.  It is very important that you call `done()` when you are finished processesing each item.
 
 There are hooks provided for all the queue events (complete, failed, failed attempt, progress).  You can add your own logic to if you want to be notified of failed webhooks or if you want to keep additional logging.
 
 
-###Webhook###
+### Webhook ###
 The point of this is to monitor the poll stream looking for matching events and then call a user provided URL.  The code makes a HTTP POST request with a JSON object in the body.
 
 Example JSON payload:
@@ -87,4 +87,6 @@ The following table includes details on the returned values.
 | Title | Text that describes the event and is displayed in the Kue UI |
 
 
+### Notes for Developers ###
+Make sure that you run `git update-index --skip-worktree config.js` so that git doesn't track changes to your config.js file.
 
