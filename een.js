@@ -1,10 +1,11 @@
 var FileCookiestore = require('tough-cookie-filestore'),
     request = require('request'),
     WebSocket = require('ws'),
-    cookie_path = 'cookie.json',
+    config = require('./config'),
     fs = require('fs'),
     host = 'https://api.eagleeyenetworks.com';
 
+var cookie_path = config.cookie_path || "cookie.json";
 
 
 // make sure the cookie.json file exists
@@ -23,6 +24,7 @@ exports.login = function(opts, success, failure) {
         url: host + '/g/aaa/authenticate',
         jar: cookie_jar,
         json: true,
+        headers: {'Authorization': config.api_key },
         body: {
             'username': opts.username,
             'password': opts.password,
@@ -35,6 +37,7 @@ exports.login = function(opts, success, failure) {
                     url: host + '/g/aaa/authorize',
                     jar: cookie_jar,
                     json: true,
+                    headers: {'Authorization': config.api_key },
                     body: { token: res.body.token }
                     }, function(err, res, body) {
                             if (err) { throw new Error('Authorize error') }
@@ -61,7 +64,8 @@ exports.getImage = function(opts, success, failure) {
     console.log('Requesting image: ' + img_url)
     return  request.get({
                     url: img_url,
-                    jar: cookie_jar
+                    jar: cookie_jar,
+                    headers: {'Authorization': config.api_key }
                 },
                 function (err, res, body) {
                     if (err) { return err }
@@ -83,7 +87,8 @@ exports.getPrevImage = function(opts, success, failure) {
     console.log('Requesting previous image: ' + img_url)
     return  request.get({
                     url: img_url,
-                    jar: cookie_jar
+                    jar: cookie_jar,
+                    headers: {'Authorization': config.api_key }
                 },
                 function (err, res, body) {
                     if (err) { return err }
@@ -104,7 +109,8 @@ exports.getNextImage = function(opts, success, failure) {
     console.log('Requesting next image: ' + img_url)
     return  request.get({
                     url: img_url,
-                    jar: cookie_jar
+                    jar: cookie_jar,
+                    headers: {'Authorization': config.api_key }
                 },
                 function (err, res, body) {
                     if (err) { return err }
@@ -125,7 +131,8 @@ exports.getAfterImage = function(opts, success, failure) {
     console.log('Requesting after image: ' + img_url)
     return  request.get({
                 url: img_url,
-                jar: cookie_jar
+                jar: cookie_jar,
+                headers: {'Authorization': config.api_key }
             },
             function (err, res, body) {
                 if (err) { return err }
@@ -146,7 +153,8 @@ exports.getVideo = function(opts, success, failure) {
     console.log('Requesting video: ' + src_url)
     return  request.get({
                     url: src_url,
-                    jar: cookie_jar
+                    jar: cookie_jar,
+                    headers: {'Authorization': config.api_key }
                 },
                 function (err, res, body) {
                     if (err) { return err }
@@ -173,7 +181,8 @@ exports.getVideoList = function(opts, success, failure) {
     console.log('Requesting list of videos: ' + img_url)
     return  request.get({
                     url: img_url,
-                    jar: cookie_jar
+                    jar: cookie_jar,
+                    headers: {'Authorization': config.api_key }
                 },
                 function (err, res, body) {
                     if (err) { return err }
@@ -197,7 +206,8 @@ exports.getDeviceList = function(opts, success, failure) {
     //console.log('making request to getDeviceList: ' + src_url)
     request.get({
             url: src_url,
-            jar: cookie_jar
+            jar: cookie_jar,
+            headers: {'Authorization': config.api_key }
         },
         function (err, res, body) {
             if (err) { 
@@ -221,6 +231,7 @@ exports.subscribePollStream = function(opts, success, failure) {
         url: src_url,
         jar: cookie_jar,
         json: true,
+        headers: {'Authorization': config.api_key },
         body: opts
         }, function(err, res, body) {
                 if (err) { 
@@ -289,6 +300,7 @@ exports.addAnnotations = function(opts, success, failure) {
             ].join(''),
         jar: cookie_jar,
         json: true,
+        headers: {'Authorization': config.api_key },
         body: opts.body
         },
         function(err, res, body) {
