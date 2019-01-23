@@ -1,22 +1,7 @@
 
-var request = require('request');
+var request = require('request'),
+    config =  require('./config');
 
-
-exports.onComplete = function(job, result) {
-
-};
-
-exports.onFailedAttempt = function(job, errorMessage, doneAttempts) {
-
-};
-
-exports.onFailed = function(job, errorMessage) {
-    
-};
-
-exports.onProgress = function(job, progress, data) {
-    
-};
 
 exports.doSomething = function(job, done) {
     // this is where the magic happens
@@ -29,7 +14,7 @@ exports.doSomething = function(job, done) {
         }, function(err, res, body) {
             if (err) { console.log(err,res,body); }
             if (!err) {
-                console.log('Called webhook and received status code: ' + res.statusCode);
+                if(config.debug) console.log('Called webhook and received status code: ' + res.statusCode);
                 switch(res.statusCode) {
                     case 200:
                         done();
@@ -50,4 +35,21 @@ exports.doSomething = function(job, done) {
             }
         });
 
+};
+
+
+exports.onComplete = function(job, result) {
+
+};
+
+exports.onFailedAttempt = function(job, errorMessage, doneAttempts) {
+
+};
+
+exports.onFailed = function(job, errorMessage) {
+    
+};
+
+exports.onProgress = function(job, progress, data) {
+    
 };
