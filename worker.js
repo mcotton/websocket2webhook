@@ -8,7 +8,7 @@ exports.doSomething = function(job, done) {
     // remember to call done()
 
     request.post({
-        url: 'https://een.cloud/dumpster/',
+        url: config.webhook_url,
         json: true,
         body: job.data
         }, function(err, res, body) {

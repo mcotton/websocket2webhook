@@ -40,7 +40,9 @@ module.exports = {
 
         // turn on and off specific logging
         'debug': false,
-        'info': true
+        'info': true,
+        
+        'webhook_url': <url to call>
 
 
     }
@@ -50,3 +52,39 @@ module.exports = {
 The primary area to add your own customizations is in `worker.js`.  The `doSomething` hook that runs on every item enqueued.  It is very important that you call `done()` when you are finished processesing each item.
 
 There are hooks provided for all the queue events (complete, failed, failed attempt, progress).  You can add your own logic to if you want to be notified of failed webhooks or if you want to keep additional logging.
+
+
+###Webhook###
+The point of this is to monitor the poll stream looking for matching events and then call a user provided URL.  The code makes a HTTP POST request with a JSON object in the body.
+
+Example JSON payload:
+
+```
+{
+	'device': '10067f22', 
+	'status': 1441855, 
+	'invalid': False, 
+	'camera_on': True, 
+	'streaming': True, 
+	'recording': False, 
+	'registered': True, 
+	'title': '10067f22 has stopped recording'
+}
+```
+
+The following table includes details on the returned values.
+
+
+| Key        | Description           |
+| ------------- |:------------- |
+| Device      | This is the Eagle Eye device ID (ESN) |
+| Status  | This is the Status Bitmask |
+| Invalide | If the Status Bitmask is invalid this will be true and the update can be ignored|
+| Camera On | The user has turned the camera on or off.  The device is still connected but not recording because of a user action |
+| Streaming | Bridge is getting data from the Camera |
+| Recording | Camera is currently recording |
+| Registered | Device has a connection to the Eagle Eye cloud |
+| Title | Text that describes the event and is displayed in the Kue UI |
+
+
+
