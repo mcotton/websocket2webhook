@@ -104,3 +104,6 @@ The following table includes details on the returned values.
 ### Notes for Developers ###
 Make sure that you run `git update-index --skip-worktree config.js` so that git doesn't track changes to your config.js file.
 
+
+### Docker Notes ###
+Who really knows how any of this stuff works.  Just run `docker-compose up` and see what happens.  It worked once, but that might have just been a fluke.
