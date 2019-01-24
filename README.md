@@ -16,6 +16,7 @@ This example is written in Node.js and uses Redis but there is nothing special a
 You will need to add valid Eagle Eye crendentials in order to use this.  Please add them into `config.js`.  An example version of it is included below for reference.
 
 ```
+
 module.exports = {
 
         // credentials for the app to use
@@ -42,10 +43,23 @@ module.exports = {
         'debug': false,
         'info': true,
         
-        'webhook_url': <url to call>
+        'webhook_url': <url to call>,
 
+        'redis_options': {
+            prefix: 'q',
+            redis: {
+                port: 6379,
+                host: 'db', // probably 127.0.0.1 or db if you're using Docker
+                auth: '',
+                options: {
+                    // see https://github.com/mranney/node_redis#rediscreateclient
+                }
+            }
+        }
 
     }
+
+
 ```
 
 ### Customization ###
