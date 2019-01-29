@@ -42,6 +42,9 @@ module.exports = {
         // turn on and off specific logging
         'debug': false,
         'info': true,
+
+        // should completed items be removed from the UI?
+        'remove_on_complete': false,
         
         'webhook_url': <url to call>,
 

@@ -55,7 +55,7 @@ function executeNextStep() {
     if(startup_items.length > 0)  { 
         startup_items.shift()();
     } else {
-        // debug("Error: executeNextStep ran out of startup_items items")
+        // executeNextStep ran out of startup_items items
     }
 }
 
@@ -69,68 +69,71 @@ function createNewJob(type, opts) {
     var job = queue.create(type, opts).ttl(10000).save( function(err) {
         if ( err ) { debug("Error creating job ", err); }
         if ( !err ) {
-            //debug("Successfully create job: " + job.id);
+            debug("Successfully create job: " + job.id);
         }
     })
 
 
     job.on('complete', function(result){
-        //debug('Job completed with data ', result);
+        debug('Job completed with data ', result);
         worker.onComplete(job, result);
 
     }).on('failed attempt', function(errorMessage, doneAttempts){
-      debug('Job failed attempt ', job.id);
-      worker.onFailedAttempt(job, errorMessage, doneAttempts);
+        debug('Job failed attempt ', job.id);
+        worker.onFailedAttempt(job, errorMessage, doneAttempts);
 
     }).on('failed', function(errorMessage){
-      debug('Job failed ', job.id);
-      worker.onFailed(job, errorMessage);
+        debug('Job failed ', job.id);
+        worker.onFailed(job, errorMessage);
 
     }).on('progress', function(progress, data){
-      debug('\r  job #' + job.id + ' ' + progress + '% complete with data ', data );
-      worker.onProgress(job, progress, data);
+        debug('\r  job #' + job.id + ' ' + progress + '% complete with data ', data );
+        worker.onProgress(job, progress, data);
     });
 }
 
 
 queue.on('job enqueue', function(id, type){
-  //debug( 'Job %s got queued of type %s', id, type );
+    debug( 'Job %s got queued of type %s', id, type );
 
 }).on('job complete', function(id, result){
-  // kue.Job.get(id, function(err, job){
-  //   if (err) return;
-  //   job.remove(function(err){
-  //     if (err) throw err;
-  //     //debug('removed completed job #%d', job.id);
-  //   });
-  // });
+    kue.Job.get(id, function(err, job){
+        if (err) return;
+
+        if(config.remove_on_complete) {
+            job.remove(function(err){
+                if (err) throw err;
+                    debug('removed completed job #%d', job.id);
+            });
+        }
+    });
 
 }).on( 'error', function( err ) {
-  debug( 'Kue: Oops... ', err );
+    debug( 'Kue: Oops... ', err );
 });
 
 
 // Graceful Shutdown
 process.once( 'SIGTERM', function ( sig ) {
-  queue.shutdown( 5000, function(err) {
-    info( 'Kue shutdown: ', err || '' );
-    process.exit( 0 );
-  });
+    queue.shutdown( 5000, function(err) {
+        info( 'Kue shutdown: ', err || '' );
+        process.exit( 0 );
+    });
 });
 
 process.once( 'SIGINT', function ( sig ) {
-  queue.shutdown( 5000, function(err) {
-    info( 'Kue shutdown: ', err || '' );
-    process.exit( 0 );
-  });
+    queue.shutdown( 5000, function(err) {
+        info( 'Kue shutdown: ', err || '' );
+        process.exit( 0 );
+    });
 });
 
 process.once( 'uncaughtException', function(err){
-  console.error( 'Something bad happened: ', err );
-  queue.shutdown( 5000, function(err2){
-    console.error( 'Kue shutdown result: ', err2 || 'OK' );
-    process.exit( 0 );
-  });
+    debug( 'Something bad happened: ', err );
+    queue.shutdown( 5000, function(err2){
+        debug( 'Kue shutdown result: ', err2 || 'OK' );
+        process.exit( 0 );
+    });
 });
 
 
@@ -247,7 +250,7 @@ function compareDeviceStatus(data) {
 
                 if(config.listen_for_streaming) {
                     if(oldStatusObj['streaming'] != newStatusObj['streaming']) {
-                        newStatusObj['title'] =  newStatusObj['streaming'] ? item + " is now streaming" : item + " has stoped streaming";
+                        newStatusObj['title'] =  newStatusObj['streaming'] ? item + " is now streaming" : item + " has stopped streaming";
                         createNewJob('status', newStatusObj);
                     }
                 }

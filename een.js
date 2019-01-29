@@ -259,6 +259,7 @@ exports.subscribeWSPollStream = function(opts, message_func, error_func) {
     ws = new WebSocket(url);
 
     ws.on('open', function() {
+        if(config.debug) console.log('WS open');
         try {
             ws.send(JSON.stringify(opts.poll));
         } catch(e) {
@@ -268,18 +269,18 @@ exports.subscribeWSPollStream = function(opts, message_func, error_func) {
     });
 
     ws.on('message', function(data) {
-        // console.log('WS message: ', data);
+        if(config.debug) console.log('WS message: ', data);
         if ( typeof message_func === 'function') message_func(data);
     });
 
     ws.on('error', function(data) {
-        // console.log('WS Error: ', data)
+        if(config.debug) console.log('WS Error: ', data)
         if ( typeof error_func === 'function') error_func(data);
     });
 
     ws.on('close', function close() {
-        if ( typeof error_func === 'function') error_func(data);
-        console.log('disconnected');
+        if(config.debug) console.log('WS close');
+        if ( typeof error_func === 'function') error_func(data); 
     });
 };
 
