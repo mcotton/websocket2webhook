@@ -19,12 +19,26 @@ module.exports = {
         'listen_for_camera_on': true,
         'listen_for_streaming': true,
         'listen_for_registered': true,
-        
+
         // turn on and off specific logging
-        'debug': true,
+        'debug': false,
         'info': true,
 
-        'webhook_url': <url to call>
+        // should completed items be removed from the UI?
+        'remove_on_complete': false,
+        
+        'webhook_url': <url to call>,
 
+        'redis_options': {
+            prefix: 'q',
+            redis: {
+                port: 6379,
+                host: 'db', // probably 127.0.0.1 or db if you're using Docker
+                auth: '',
+                options: {
+                    // see https://github.com/mranney/node_redis#rediscreateclient
+                }
+            }
+        }
 
     }
