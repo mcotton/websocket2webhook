@@ -280,7 +280,7 @@ exports.subscribeWSPollStream = function(opts, message_func, error_func) {
 
     ws.on('close', function close() {
         if(config.debug) console.log('WS close');
-        if ( typeof error_func === 'function') error_func(data); 
+        if ( typeof error_func === 'function') error_func({}); 
     });
 };
 
