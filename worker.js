@@ -8,7 +8,7 @@ exports.doSomething = function(job, done) {
     // remember to call done()
 
     request.post({
-        url: config.webhook_url,
+	url: 'http://web_one:3000/dashboard/api/update_device/' + job.data.device,
         json: true,
         body: job.data
         }, function(err, res, body) {

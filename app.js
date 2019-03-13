@@ -320,6 +320,13 @@ function failure(data) {
 
 function processWSError(data) {
     debug("Error from processWSError: ", data);
+    debug("Restarting from the begining");
+    startup_items = [
+        function() { een.login({'username': config.username, 'password': config.password}, postLogin, failure); },
+        function() { een.getDeviceList({}, postGetDevices, failure); },
+        function() { buildPollQuery(); }
+    ];
+    executeNextStep();
 }
 
 
