@@ -2,12 +2,6 @@
 version: '3'
 
 services:
-  db:
-    image: redis
-    sysctls:
-      net.core.somaxconn: 1024 
-    ports:
-      - '6379:6379'
 
 
   web:
@@ -19,3 +13,4 @@ services:
       - "3000:3000"
     depends_on:
       - db
+    restart: always
