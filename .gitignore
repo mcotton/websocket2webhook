@@ -2,3 +2,4 @@ node_modules/
 npm-debug.log
 cookie.json
 dump.rdb
+*.aof
