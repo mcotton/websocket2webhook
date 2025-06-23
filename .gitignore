@@ -3,3 +3,4 @@ npm-debug.log
 cookie.json
 dump.rdb
 *.aof
+.DS_Store

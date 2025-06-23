@@ -10,7 +10,9 @@ exports.doSomething = function(job, done) {
     if(config.debug) {
         console.log("pulling item off of queue...");
     }
-    done();
+    setTimeout(function() {
+        done();
+    }, 5000);
 
 };
 
